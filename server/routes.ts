@@ -63,7 +63,7 @@ export async function registerRoutes(app: Express) {
 
       res.json({
         results: movies,
-        page,
+        page: data.page,
         total_pages: data.total_pages,
         total_results: data.total_results
       });
@@ -76,11 +76,9 @@ export async function registerRoutes(app: Express) {
   app.get("/api/movies/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      // First try to get from storage
       const movie = await storage.getMovie(id);
 
       if (!movie) {
-        // If not in storage, fetch from TMDB
         const response = await fetch(
           `${TMDB_BASE_URL}/movie/${id}`,
           {
@@ -107,7 +105,6 @@ export async function registerRoutes(app: Express) {
           genres: tmdbMovie.genre_ids || [],
         });
 
-        // Store in our database
         const newMovie = await storage.createMovie(movieData);
         return res.json(newMovie);
       }
@@ -171,7 +168,7 @@ export async function registerRoutes(app: Express) {
 
       res.json({
         results: tvShows,
-        page,
+        page: data.page,
         total_pages: data.total_pages,
         total_results: data.total_results
       });
@@ -184,11 +181,9 @@ export async function registerRoutes(app: Express) {
   app.get("/api/tv/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      // First try to get from storage
       const tvShow = await storage.getTVShow(id);
 
       if (!tvShow) {
-        // If not in storage, fetch from TMDB
         const response = await fetch(
           `${TMDB_BASE_URL}/tv/${id}`,
           {
@@ -216,7 +211,6 @@ export async function registerRoutes(app: Express) {
           numberOfSeasons: tmdbShow.number_of_seasons || 1,
         });
 
-        // Store in our database
         const newShow = await storage.createTVShow(showData);
         return res.json(newShow);
       }
@@ -253,6 +247,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Search endpoints
   app.get("/api/search", async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -276,7 +271,6 @@ export async function registerRoutes(app: Express) {
 
       const data = await response.json() as TMDBResponse;
 
-      // Process movies and TV shows from the results
       const movies = data.results
         .filter(isTMDBMovie)
         .map(movie => ({
@@ -292,7 +286,7 @@ export async function registerRoutes(app: Express) {
         }));
 
       const tvShows = data.results
-        .filter((item): item is TMDBTVShow => !isTMDBMovie(item) && item.media_type === "tv")
+        .filter((item): item is TMDBTVShow => !isTMDBMovie(item))
         .map(show => ({
           id: show.id,
           tmdbId: show.id,
@@ -303,10 +297,10 @@ export async function registerRoutes(app: Express) {
           firstAirDate: show.first_air_date,
           voteAverage: Math.round(show.vote_average),
           genres: show.genre_ids,
-          numberOfSeasons: show.number_of_seasons,
+          numberOfSeasons: show.number_of_seasons || 1,
         }));
 
-      // Store the results in our storage
+      // Store results in our storage
       for (const movie of movies) {
         const existing = await storage.getMovieByTMDBId(movie.tmdbId);
         if (!existing) {
@@ -339,10 +333,8 @@ export async function registerRoutes(app: Express) {
   app.get("/api/movies/watch/:tmdbId", async (req, res) => {
     try {
       const tmdbId = req.params.tmdbId;
-      
       // Set appropriate content type
       res.setHeader('Content-Type', 'text/html');
-      
       res.send(`
         <!DOCTYPE html>
         <html>
@@ -369,7 +361,7 @@ export async function registerRoutes(app: Express) {
       res.status(500).send("Failed to load movie player");
     }
   });
-  app.get("/api/movies/search", async (req, res) => {
+    app.get("/api/movies/search", async (req, res) => {
     try {
       const query = req.query.q as string;
       if (!query) {

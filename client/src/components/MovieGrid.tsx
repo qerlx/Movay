@@ -1,5 +1,6 @@
 import { type Movie } from "@shared/schema";
 import { MovieCard } from "./MovieCard";
+import { motion } from "framer-motion";
 
 interface MovieGridProps {
   movies: Movie[];
@@ -7,10 +8,15 @@ interface MovieGridProps {
 
 export function MovieGrid({ movies }: MovieGridProps) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-      {movies.map((movie) => (
-        <MovieCard key={movie.id} movie={movie} />
+    <motion.div 
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {movies.map((movie, index) => (
+        <MovieCard key={movie.id} movie={movie} index={index} />
       ))}
-    </div>
+    </motion.div>
   );
 }

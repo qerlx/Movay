@@ -1,7 +1,7 @@
 import { type Movie } from "@shared/schema";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 interface PlayerProps {
   movie: Movie;
@@ -10,30 +10,24 @@ interface PlayerProps {
 declare global {
   interface Window {
     Playerjs: any;
+    PlayerjsAsync: () => void;
   }
 }
 
 export function Player({ movie }: PlayerProps) {
   const [, setLocation] = useLocation();
-  const playerRef = useRef<any>(null);
 
   useEffect(() => {
-    // Initialize player only if Playerjs is loaded
-    if (window.Playerjs) {
-      playerRef.current = new window.Playerjs({
+    // Define async player initialization
+    window.PlayerjsAsync = () => {
+      new window.Playerjs({
         id: "player",
         file: `/api/movies/watch/${movie.tmdbId}`,
         poster: `https://image.tmdb.org/t/p/original${movie.backdropPath}`,
+        title: movie.title,
+        autoplay: 1,
         volume: 100,
-        autoplay: true,
-        vast: false, // Disable ads
       });
-    }
-
-    return () => {
-      if (playerRef.current) {
-        playerRef.current.api('destroy');
-      }
     };
   }, [movie]);
 

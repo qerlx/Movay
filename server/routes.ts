@@ -61,8 +61,16 @@ export async function registerRoutes(app: Express) {
   // TV Show routes
   app.get("/api/tv/popular", async (req, res) => {
     try {
+      const page = parseInt(req.query.page as string) || 1;
+      const genre = req.query.genre ? parseInt(req.query.genre as string) : null;
+
+      let url = `${TMDB_BASE_URL}/tv/popular?page=${page}`;
+      if (genre) {
+        url += `&with_genres=${genre}`;
+      }
+
       const response = await fetch(
-        `${TMDB_BASE_URL}/tv/popular`,
+        url,
         {
           headers: {
             'Authorization': TMDB_AUTH_HEADER,
@@ -76,29 +84,36 @@ export async function registerRoutes(app: Express) {
       }
 
       const data = await response.json() as TMDBResponse;
-      const tvShows = data.results.filter((item): item is TMDBTVShow => !isTMDBMovie(item));
+      const tvShows = data.results
+        .filter((item): item is TMDBTVShow => !isTMDBMovie(item))
+        .map(show => ({
+          id: show.id,
+          tmdbId: show.id,
+          title: show.name,
+          overview: show.overview,
+          posterPath: show.poster_path,
+          backdropPath: show.backdrop_path,
+          firstAirDate: show.first_air_date,
+          voteAverage: Math.round(show.vote_average),
+          genres: show.genre_ids,
+          numberOfSeasons: show.number_of_seasons,
+        }));
 
       // Store TV shows in our storage
       for (const show of tvShows) {
-        const existing = await storage.getTVShowByTMDBId(show.id);
+        const existing = await storage.getTVShowByTMDBId(show.tmdbId);
         if (!existing) {
-          const showData = insertTVShowSchema.parse({
-            tmdbId: show.id,
-            title: show.name,
-            overview: show.overview,
-            posterPath: show.poster_path,
-            backdropPath: show.backdrop_path,
-            firstAirDate: show.first_air_date,
-            voteAverage: Math.round(show.vote_average),
-            genres: show.genre_ids,
-            numberOfSeasons: show.number_of_seasons,
-          });
+          const showData = insertTVShowSchema.parse(show);
           await storage.createTVShow(showData);
         }
       }
 
-      const storedShows = await storage.getPopularTVShows();
-      res.json(storedShows);
+      res.json({
+        results: tvShows,
+        page,
+        total_pages: data.total_pages,
+        total_results: data.total_results
+      });
     } catch (error) {
       console.error("Error fetching popular TV shows:", error);
       res.status(500).json({ message: "Failed to fetch popular TV shows" });

@@ -34,17 +34,9 @@ export function SearchBox() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      setLocation(`/search?q=${encodeURIComponent(query.trim())}`);
-      setIsOpen(false);
-    }
-  };
-
   return (
     <div ref={searchContainerRef} className="search-container relative w-80">
-      <form onSubmit={handleSubmit} className="relative">
+      <form className="relative">
         <Input
           ref={inputRef}
           type="search"

@@ -15,8 +15,16 @@ export async function registerRoutes(app: Express) {
   // Movie routes
   app.get("/api/movies/popular", async (req, res) => {
     try {
+      const page = parseInt(req.query.page as string) || 1;
+      const genre = req.query.genre ? parseInt(req.query.genre as string) : null;
+
+      let url = `${TMDB_BASE_URL}/movie/popular?page=${page}`;
+      if (genre) {
+        url += `&with_genres=${genre}`;
+      }
+
       const response = await fetch(
-        `${TMDB_BASE_URL}/movie/popular`,
+        url,
         {
           headers: {
             'Authorization': TMDB_AUTH_HEADER,
@@ -30,29 +38,35 @@ export async function registerRoutes(app: Express) {
       }
 
       const data = await response.json() as TMDBResponse;
-      const movies = data.results.filter(isTMDBMovie);
+      const movies = data.results
+        .filter(isTMDBMovie)
+        .map(movie => ({
+          id: movie.id,
+          tmdbId: movie.id,
+          title: movie.title,
+          overview: movie.overview,
+          posterPath: movie.poster_path,
+          backdropPath: movie.backdrop_path,
+          releaseDate: movie.release_date,
+          voteAverage: Math.round(movie.vote_average),
+          genres: movie.genre_ids,
+        }));
 
       // Store movies in our storage
       for (const movie of movies) {
-        const existing = await storage.getMovieByTMDBId(movie.id);
+        const existing = await storage.getMovieByTMDBId(movie.tmdbId);
         if (!existing) {
-          const movieData = insertMovieSchema.parse({
-            tmdbId: movie.id,
-            title: movie.title,
-            overview: movie.overview,
-            posterPath: movie.poster_path,
-            backdropPath: movie.backdrop_path,
-            releaseDate: movie.release_date,
-            voteAverage: Math.round(movie.vote_average),
-            genres: movie.genre_ids,
-          });
+          const movieData = insertMovieSchema.parse(movie);
           await storage.createMovie(movieData);
         }
       }
 
-      // Get all movies from storage
-      const storedMovies = await storage.getPopularMovies();
-      res.json(storedMovies);
+      res.json({
+        results: movies,
+        page,
+        total_pages: data.total_pages,
+        total_results: data.total_results
+      });
     } catch (error) {
       console.error("Error fetching popular movies:", error);
       res.status(500).json({ message: "Failed to fetch popular movies" });

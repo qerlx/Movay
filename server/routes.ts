@@ -52,6 +52,23 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/movies/stream/:tmdbId", async (req, res) => {
+    try {
+      const tmdbId = req.params.tmdbId;
+      const response = await fetch(`https://moviesapi.club/movie/${tmdbId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to get stream URL');
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching stream URL:", error);
+      res.status(500).json({ message: "Failed to get stream URL" });
+    }
+  });
+
   app.get("/api/movies/search", async (req, res) => {
     try {
       const query = req.query.q as string;

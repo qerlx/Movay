@@ -3,7 +3,7 @@ import { SearchBox } from "./SearchBox";
 
 export function NavBar() {
   const [location] = useLocation();
-  
+
   const isWatchPage = location.startsWith("/watch");
   if (isWatchPage) return null;
 
@@ -12,14 +12,14 @@ export function NavBar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/">
-            <a className="text-2xl font-bold text-primary">NetflixClone</a>
+            <span className="text-2xl font-bold text-primary cursor-pointer">NetflixClone</span>
           </Link>
           <div className="hidden md:flex gap-6">
             <Link href="/">
-              <a className="text-sm hover:text-primary transition-colors">Home</a>
+              <span className="text-sm hover:text-primary transition-colors cursor-pointer">Home</span>
             </Link>
             <Link href="/movies">
-              <a className="text-sm hover:text-primary transition-colors">Movies</a>
+              <span className="text-sm hover:text-primary transition-colors cursor-pointer">Movies</span>
             </Link>
           </div>
         </div>

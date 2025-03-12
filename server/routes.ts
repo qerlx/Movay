@@ -8,7 +8,7 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_AUTH_HEADER = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQzYzU2N2ZhZTk3Y2JlZGM0OGQ1YWQ0Yjg5M2YzMSIsIm5iZiI6MTc0MTc1NzA2NC43MzMsInN1YiI6IjY3ZDExYTg4MTM5OTBhMDU4YjYwYWExMiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.PfUfbFyxCtI3bJehMrDRUuuKOPp58WC-_4B4aUovCyA";
 
 function isTMDBMovie(item: TMDBMovie | TMDBTVShow): item is TMDBMovie {
-  return 'title' in item;
+  return 'title' in item && !('name' in item);
 }
 
 export async function registerRoutes(app: Express) {
@@ -50,11 +50,58 @@ export async function registerRoutes(app: Express) {
         }
       }
 
+      // Get all movies from storage
       const storedMovies = await storage.getPopularMovies();
       res.json(storedMovies);
     } catch (error) {
       console.error("Error fetching popular movies:", error);
       res.status(500).json({ message: "Failed to fetch popular movies" });
+    }
+  });
+
+  app.get("/api/movies/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      // First try to get from storage
+      const movie = await storage.getMovie(id);
+
+      if (!movie) {
+        // If not in storage, fetch from TMDB
+        const response = await fetch(
+          `${TMDB_BASE_URL}/movie/${id}`,
+          {
+            headers: {
+              'Authorization': TMDB_AUTH_HEADER,
+              'accept': 'application/json'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          return res.status(404).json({ message: "Movie not found" });
+        }
+
+        const tmdbMovie = await response.json();
+        const movieData = insertMovieSchema.parse({
+          tmdbId: tmdbMovie.id,
+          title: tmdbMovie.title,
+          overview: tmdbMovie.overview,
+          posterPath: tmdbMovie.poster_path,
+          backdropPath: tmdbMovie.backdrop_path,
+          releaseDate: tmdbMovie.release_date,
+          voteAverage: Math.round(tmdbMovie.vote_average),
+          genres: tmdbMovie.genre_ids || [],
+        });
+
+        // Store in our database
+        const newMovie = await storage.createMovie(movieData);
+        return res.json(newMovie);
+      }
+
+      res.json(movie);
+    } catch (error) {
+      console.error("Error fetching movie:", error);
+      res.status(500).json({ message: "Failed to fetch movie" });
     }
   });
 
@@ -96,7 +143,7 @@ export async function registerRoutes(app: Express) {
           firstAirDate: show.first_air_date,
           voteAverage: Math.round(show.vote_average),
           genres: show.genre_ids,
-          numberOfSeasons: show.number_of_seasons,
+          numberOfSeasons: show.number_of_seasons || 1,
         }));
 
       // Store TV shows in our storage
@@ -117,6 +164,53 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching popular TV shows:", error);
       res.status(500).json({ message: "Failed to fetch popular TV shows" });
+    }
+  });
+
+  app.get("/api/tv/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      // First try to get from storage
+      const tvShow = await storage.getTVShow(id);
+
+      if (!tvShow) {
+        // If not in storage, fetch from TMDB
+        const response = await fetch(
+          `${TMDB_BASE_URL}/tv/${id}`,
+          {
+            headers: {
+              'Authorization': TMDB_AUTH_HEADER,
+              'accept': 'application/json'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          return res.status(404).json({ message: "TV show not found" });
+        }
+
+        const tmdbShow = await response.json();
+        const showData = insertTVShowSchema.parse({
+          tmdbId: tmdbShow.id,
+          title: tmdbShow.name,
+          overview: tmdbShow.overview,
+          posterPath: tmdbShow.poster_path,
+          backdropPath: tmdbShow.backdrop_path,
+          firstAirDate: tmdbShow.first_air_date,
+          voteAverage: Math.round(tmdbShow.vote_average),
+          genres: tmdbShow.genre_ids || [],
+          numberOfSeasons: tmdbShow.number_of_seasons || 1,
+        });
+
+        // Store in our database
+        const newShow = await storage.createTVShow(showData);
+        return res.json(newShow);
+      }
+
+      res.json(tvShow);
+    } catch (error) {
+      console.error("Error fetching TV show:", error);
+      res.status(500).json({ message: "Failed to fetch TV show" });
     }
   });
 
@@ -145,23 +239,6 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/tv/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const tvShow = await storage.getTVShow(id);
-
-      if (!tvShow) {
-        return res.status(404).json({ message: "TV show not found" });
-      }
-
-      res.json(tvShow);
-    } catch (error) {
-      console.error("Error fetching TV show:", error);
-      res.status(500).json({ message: "Failed to fetch TV show" });
-    }
-  });
-
-  // Search route (combined movies and TV shows)
   app.get("/api/search", async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -278,7 +355,6 @@ export async function registerRoutes(app: Express) {
       res.status(500).send("Failed to load movie player");
     }
   });
-
   app.get("/api/movies/search", async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -339,21 +415,6 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/movies/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const movie = await storage.getMovie(id);
-
-      if (!movie) {
-        return res.status(404).json({ message: "Movie not found" });
-      }
-
-      res.json(movie);
-    } catch (error) {
-      console.error("Error fetching movie:", error);
-      res.status(500).json({ message: "Failed to fetch movie" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

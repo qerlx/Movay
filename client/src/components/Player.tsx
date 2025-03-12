@@ -27,7 +27,6 @@ export function Player({ movie }: PlayerProps) {
 
   return (
     <div className="min-h-screen bg-[#0a0a14] text-white">
-      {/* Navigation */}
       <button
         onClick={() => setLocation(`/movie/${movie.id}`)}
         className="fixed top-4 left-4 z-50 p-2 rounded-full bg-[#1a1a2e]/50 hover:bg-indigo-600 transition-all duration-300 transform hover:scale-110"
@@ -36,7 +35,6 @@ export function Player({ movie }: PlayerProps) {
       </button>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Movie Info */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 animate-fade-in">
           {posterUrl && (
             <div className="hidden md:block transform hover:scale-105 transition-transform duration-300">
@@ -60,7 +58,6 @@ export function Player({ movie }: PlayerProps) {
           </div>
         </div>
 
-        {/* Player Container */}
         <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.2)]">
           <iframe
             src={`https://embed.su/embed/movie/${movie.tmdbId}`}
@@ -70,7 +67,6 @@ export function Player({ movie }: PlayerProps) {
           />
         </div>
 
-        {/* Related Movies */}
         {relatedMovies && relatedMovies.length > 0 && (
           <div className="mt-12 animate-fade-in">
             <h2 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">

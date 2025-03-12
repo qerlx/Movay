@@ -9,16 +9,13 @@ import MoviePage from "@/pages/movie";
 import TVShowPage from "@/pages/tv-show";
 import WatchPage from "@/pages/watch";
 import SearchPage from "@/pages/search";
-import TVShowsPage from "@/pages/tv-shows";
 
 function Router() {
   return (
     <div className="min-h-screen bg-background pt-16">
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/movies" component={MoviePage} />
         <Route path="/movie/:id" component={MoviePage} />
-        <Route path="/tv-shows" component={TVShowsPage} />
         <Route path="/tv/:id" component={TVShowPage} />
         <Route path="/watch/:id" component={WatchPage} />
         <Route path="/search" component={SearchPage} />

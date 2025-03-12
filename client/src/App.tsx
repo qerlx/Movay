@@ -7,15 +7,19 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import MoviePage from "@/pages/movie";
 import WatchPage from "@/pages/watch";
+import SearchPage from "@/pages/search";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/movie/:id" component={MoviePage} />
-      <Route path="/watch/:id" component={WatchPage} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen bg-background pt-16">
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/movie/:id" component={MoviePage} />
+        <Route path="/watch/:id" component={WatchPage} />
+        <Route path="/search" component={SearchPage} />
+        <Route component={NotFound} />
+      </Switch>
+    </div>
   );
 }
 

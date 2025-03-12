@@ -21,7 +21,7 @@ export function SearchBox() {
         placeholder="Search movies..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pl-10"
+        className="pl-10 bg-background/10 border-background/20 focus:border-primary"
       />
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
     </form>

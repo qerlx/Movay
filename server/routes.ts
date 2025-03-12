@@ -52,37 +52,6 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/movies/stream/:tmdbId", async (req, res) => {
-    try {
-      const tmdbId = req.params.tmdbId;
-      const response = await fetch(`https://moviesapi.club/movie/${tmdbId}`, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-      });
-
-      if (!response.ok) {
-        console.error(`moviesapi.club error: ${response.status} ${response.statusText}`);
-        throw new Error('Failed to get stream URL');
-      }
-
-      const data = await response.json();
-
-      if (!data?.url) {
-        throw new Error('Invalid stream data received');
-      }
-
-      res.json(data);
-    } catch (error) {
-      console.error("Error fetching stream URL:", error);
-      res.status(500).json({ 
-        message: "Failed to get stream URL",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
   app.get("/api/movies/watch/:tmdbId", async (req, res) => {
     try {
       const tmdbId = req.params.tmdbId;
@@ -92,12 +61,17 @@ export async function registerRoutes(app: Express) {
           <head>
             <title>Movie Player</title>
             <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
+              body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
               iframe { width: 100%; height: 100%; border: none; }
             </style>
           </head>
           <body>
-            <iframe src="https://szvyflix-proxied.vercel.app/movies.html?tmdb=${tmdbId}" allowfullscreen></iframe>
+            <iframe 
+              src="https://moviesapi.club/movie/${tmdbId}" 
+              allow="autoplay; fullscreen" 
+              allowfullscreen
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
           </body>
         </html>
       `);

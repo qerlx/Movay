@@ -1,13 +1,53 @@
 import { type Movie } from "@shared/schema";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import { useEffect, useRef } from "react";
 
 interface PlayerProps {
   movie: Movie;
 }
 
+declare global {
+  interface Window {
+    Playerjs: any;
+  }
+}
+
 export function Player({ movie }: PlayerProps) {
   const [, setLocation] = useLocation();
+  const playerRef = useRef<any>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const initPlayer = async () => {
+      try {
+        // Get stream URL from moviesapi.club
+        const response = await fetch(`https://moviesapi.club/movie/${movie.tmdbId}`);
+        if (!response.ok) {
+          throw new Error('Failed to get stream URL');
+        }
+        const data = await response.json();
+
+        if (playerContainerRef.current && window.Playerjs) {
+          playerRef.current = new window.Playerjs({
+            id: "player",
+            file: data.url, // Use the stream URL from moviesapi.club
+            poster: `https://image.tmdb.org/t/p/original${movie.backdropPath}`,
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing player:', error);
+      }
+    };
+
+    initPlayer();
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.api('destroy');
+      }
+    };
+  }, [movie]);
 
   return (
     <div className="relative h-screen bg-black">
@@ -19,12 +59,12 @@ export function Player({ movie }: PlayerProps) {
       </button>
 
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="aspect-video w-full max-w-7xl bg-muted">
-          <div className="h-full flex items-center justify-center">
-            <p className="text-muted-foreground">
-              This is a mock player for {movie.title}
-            </p>
-          </div>
+        <div className="aspect-video w-full max-w-7xl">
+          <div 
+            ref={playerContainerRef}
+            id="player" 
+            className="w-full h-full"
+          />
         </div>
       </div>
     </div>

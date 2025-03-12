@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express) {
       }
 
       const response = await fetch(
-        `${TMDB_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`,
+        `${TMDB_BASE_URL}/search/multi?query=${encodeURIComponent(query)}`,
         {
           headers: {
             'Authorization': TMDB_AUTH_HEADER,
@@ -225,10 +225,41 @@ export async function registerRoutes(app: Express) {
       }
 
       const data = await response.json() as TMDBResponse;
-      res.json(data.results);
+
+      // Separate movies and TV shows
+      const movies = data.results
+        .filter(isTMDBMovie)
+        .map(movie => ({
+          id: movie.id,
+          tmdbId: movie.id,
+          title: movie.title,
+          overview: movie.overview,
+          posterPath: movie.poster_path,
+          backdropPath: movie.backdrop_path,
+          releaseDate: movie.release_date,
+          voteAverage: Math.round(movie.vote_average),
+          genres: movie.genre_ids,
+        }));
+
+      const tvShows = data.results
+        .filter((item): item is TMDBTVShow => !isTMDBMovie(item))
+        .map(show => ({
+          id: show.id,
+          tmdbId: show.id,
+          title: show.name,
+          overview: show.overview,
+          posterPath: show.poster_path,
+          backdropPath: show.backdrop_path,
+          firstAirDate: show.first_air_date,
+          voteAverage: Math.round(show.vote_average),
+          genres: show.genre_ids,
+          numberOfSeasons: show.number_of_seasons,
+        }));
+
+      res.json({ movies, tvShows });
     } catch (error) {
-      console.error("Error searching movies:", error);
-      res.status(500).json({ message: "Failed to search movies" });
+      console.error("Error searching:", error);
+      res.status(500).json({ message: "Failed to search" });
     }
   });
 

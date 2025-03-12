@@ -19,7 +19,7 @@ export function SearchBox() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: results, isLoading } = useQuery<SearchResults>({
-    queryKey: [`/api/search?q=${query}`],
+    queryKey: [`/api/movies/search?q=${query}`],
     enabled: query.length > 2,
   });
 

@@ -1,13 +1,18 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertMovieSchema, type TMDBResponse } from "@shared/schema";
+import { insertMovieSchema, insertTVShowSchema, type TMDBResponse, type TMDBMovie, type TMDBTVShow } from "@shared/schema";
 
 const TMDB_API_KEY = "a343c567fae97cbedc48d5ad4b893f31";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_AUTH_HEADER = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhMzQzYzU2N2ZhZTk3Y2JlZGM0OGQ1YWQ0Yjg5M2YzMSIsIm5iZiI6MTc0MTc1NzA2NC43MzMsInN1YiI6IjY3ZDExYTg4MTM5OTBhMDU4YjYwYWExMiIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.PfUfbFyxCtI3bJehMrDRUuuKOPp58WC-_4B4aUovCyA";
 
+function isTMDBMovie(item: TMDBMovie | TMDBTVShow): item is TMDBMovie {
+  return 'title' in item;
+}
+
 export async function registerRoutes(app: Express) {
+  // Movie routes
   app.get("/api/movies/popular", async (req, res) => {
     try {
       const response = await fetch(
@@ -25,9 +30,10 @@ export async function registerRoutes(app: Express) {
       }
 
       const data = await response.json() as TMDBResponse;
+      const movies = data.results.filter(isTMDBMovie);
 
       // Store movies in our storage
-      for (const movie of data.results) {
+      for (const movie of movies) {
         const existing = await storage.getMovieByTMDBId(movie.id);
         if (!existing) {
           const movieData = insertMovieSchema.parse({
@@ -44,11 +50,122 @@ export async function registerRoutes(app: Express) {
         }
       }
 
-      const movies = await storage.getPopularMovies();
-      res.json(movies);
+      const storedMovies = await storage.getPopularMovies();
+      res.json(storedMovies);
     } catch (error) {
       console.error("Error fetching popular movies:", error);
       res.status(500).json({ message: "Failed to fetch popular movies" });
+    }
+  });
+
+  // TV Show routes
+  app.get("/api/tv/popular", async (req, res) => {
+    try {
+      const response = await fetch(
+        `${TMDB_BASE_URL}/tv/popular`,
+        {
+          headers: {
+            'Authorization': TMDB_AUTH_HEADER,
+            'accept': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`TMDB API error: ${response.statusText}`);
+      }
+
+      const data = await response.json() as TMDBResponse;
+      const tvShows = data.results.filter((item): item is TMDBTVShow => !isTMDBMovie(item));
+
+      // Store TV shows in our storage
+      for (const show of tvShows) {
+        const existing = await storage.getTVShowByTMDBId(show.id);
+        if (!existing) {
+          const showData = insertTVShowSchema.parse({
+            tmdbId: show.id,
+            title: show.name,
+            overview: show.overview,
+            posterPath: show.poster_path,
+            backdropPath: show.backdrop_path,
+            firstAirDate: show.first_air_date,
+            voteAverage: Math.round(show.vote_average),
+            genres: show.genre_ids,
+            numberOfSeasons: show.number_of_seasons,
+          });
+          await storage.createTVShow(showData);
+        }
+      }
+
+      const storedShows = await storage.getPopularTVShows();
+      res.json(storedShows);
+    } catch (error) {
+      console.error("Error fetching popular TV shows:", error);
+      res.status(500).json({ message: "Failed to fetch popular TV shows" });
+    }
+  });
+
+  app.get("/api/tv/:id/season/:seasonNumber", async (req, res) => {
+    try {
+      const { id, seasonNumber } = req.params;
+      const response = await fetch(
+        `${TMDB_BASE_URL}/tv/${id}/season/${seasonNumber}`,
+        {
+          headers: {
+            'Authorization': TMDB_AUTH_HEADER,
+            'accept': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`TMDB API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching season details:", error);
+      res.status(500).json({ message: "Failed to fetch season details" });
+    }
+  });
+
+  app.get("/api/tv/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tvShow = await storage.getTVShow(id);
+
+      if (!tvShow) {
+        return res.status(404).json({ message: "TV show not found" });
+      }
+
+      res.json(tvShow);
+    } catch (error) {
+      console.error("Error fetching TV show:", error);
+      res.status(500).json({ message: "Failed to fetch TV show" });
+    }
+  });
+
+  // Search route (combined movies and TV shows)
+  app.get("/api/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query) {
+        return res.status(400).json({ message: "Search query required" });
+      }
+
+      const [movieResults, tvResults] = await Promise.all([
+        storage.searchMovies(query),
+        storage.searchTVShows(query)
+      ]);
+
+      res.json({
+        movies: movieResults,
+        tvShows: tvResults
+      });
+    } catch (error) {
+      console.error("Error searching:", error);
+      res.status(500).json({ message: "Failed to search" });
     }
   });
 

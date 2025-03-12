@@ -169,14 +169,75 @@ export async function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Search query required" });
       }
 
-      const [movieResults, tvResults] = await Promise.all([
-        storage.searchMovies(query),
-        storage.searchTVShows(query)
-      ]);
+      const response = await fetch(
+        `${TMDB_BASE_URL}/search/multi?query=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': TMDB_AUTH_HEADER,
+            'accept': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`TMDB API error: ${response.statusText}`);
+      }
+
+      const data = await response.json() as TMDBResponse;
+
+      // Process movies and TV shows from the results
+      const movies = data.results
+        .filter(isTMDBMovie)
+        .map(movie => ({
+          id: movie.id,
+          tmdbId: movie.id,
+          title: movie.title,
+          overview: movie.overview,
+          posterPath: movie.poster_path,
+          backdropPath: movie.backdrop_path,
+          releaseDate: movie.release_date,
+          voteAverage: Math.round(movie.vote_average),
+          genres: movie.genre_ids,
+        }));
+
+      const tvShows = data.results
+        .filter((item): item is TMDBTVShow => !isTMDBMovie(item) && item.media_type === "tv")
+        .map(show => ({
+          id: show.id,
+          tmdbId: show.id,
+          title: show.name,
+          overview: show.overview,
+          posterPath: show.poster_path,
+          backdropPath: show.backdrop_path,
+          firstAirDate: show.first_air_date,
+          voteAverage: Math.round(show.vote_average),
+          genres: show.genre_ids,
+          numberOfSeasons: show.number_of_seasons,
+        }));
+
+      // Store the results in our storage
+      for (const movie of movies) {
+        const existing = await storage.getMovieByTMDBId(movie.tmdbId);
+        if (!existing) {
+          const movieData = insertMovieSchema.parse(movie);
+          await storage.createMovie(movieData);
+        }
+      }
+
+      for (const show of tvShows) {
+        const existing = await storage.getTVShowByTMDBId(show.tmdbId);
+        if (!existing) {
+          const showData = insertTVShowSchema.parse(show);
+          await storage.createTVShow(showData);
+        }
+      }
 
       res.json({
-        movies: movieResults,
-        tvShows: tvResults
+        movies,
+        tvShows,
+        total_results: data.total_results,
+        page: data.page,
+        total_pages: data.total_pages
       });
     } catch (error) {
       console.error("Error searching:", error);

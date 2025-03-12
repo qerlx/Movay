@@ -9,6 +9,7 @@ import { type Movie, type TVShow } from "@shared/schema";
 interface SearchResults {
   movies: Movie[];
   tvShows: TVShow[];
+  total_results: number;
 }
 
 export function SearchBox() {
@@ -19,7 +20,7 @@ export function SearchBox() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: results, isLoading } = useQuery<SearchResults>({
-    queryKey: [`/api/movies/search?q=${query}`],
+    queryKey: [`/api/search?q=${query}`],
     enabled: query.length > 2,
   });
 
@@ -61,7 +62,6 @@ export function SearchBox() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400" />
       </div>
 
-      {/* Live Search Results */}
       {isOpen && query.length > 2 && (
         <div className="absolute top-full left-0 right-0 mt-2 p-2 bg-[#1a1a2e] rounded-lg shadow-[0_4px_20px_rgba(79,70,229,0.1)] border border-indigo-600/20 z-50 max-h-[70vh] overflow-y-auto animate-fade-in">
           {isLoading ? (

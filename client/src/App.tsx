@@ -6,7 +6,9 @@ import { NavBar } from "@/components/NavBar";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import MoviePage from "@/pages/movie";
+import MoviesPage from "@/pages/movies";
 import TVShowPage from "@/pages/tv-show";
+import TVShowsPage from "@/pages/tv-shows";
 import WatchPage from "@/pages/watch";
 import SearchPage from "@/pages/search";
 
@@ -15,7 +17,9 @@ function Router() {
     <div className="min-h-screen bg-background pt-16">
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/movies" component={MoviesPage} />
         <Route path="/movie/:id" component={MoviePage} />
+        <Route path="/tv-shows" component={TVShowsPage} />
         <Route path="/tv/:id" component={TVShowPage} />
         <Route path="/watch/:id" component={WatchPage} />
         <Route path="/search" component={SearchPage} />

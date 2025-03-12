@@ -34,9 +34,17 @@ export function SearchBox() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && query.trim()) {
+      setLocation(`/search?q=${encodeURIComponent(query.trim())}`);
+      setIsOpen(false);
+      setQuery("");
+    }
+  };
+
   return (
     <div ref={searchContainerRef} className="search-container relative w-80">
-      <form className="relative">
+      <div className="relative">
         <Input
           ref={inputRef}
           type="search"
@@ -46,11 +54,12 @@ export function SearchBox() {
             setQuery(e.target.value);
             setIsOpen(true);
           }}
+          onKeyPress={handleKeyPress}
           onClick={() => setIsOpen(true)}
           className="pl-10 bg-[#1a1a2e]/50 border-indigo-600/20 focus:border-indigo-600 transition-all duration-300"
         />
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-indigo-400" />
-      </form>
+      </div>
 
       {/* Live Search Results */}
       {isOpen && query.length > 2 && (

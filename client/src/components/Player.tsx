@@ -1,8 +1,7 @@
 import { type Movie } from "@shared/schema";
-import { ArrowLeft, Heart, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { MediaGrid } from "./MediaGrid";
 
@@ -12,30 +11,14 @@ interface PlayerProps {
 
 export function Player({ movie }: PlayerProps) {
   const [, setLocation] = useLocation();
-  const [isLiked, setIsLiked] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isHudVisible, setIsHudVisible] = useState(true);
 
   // Fetch related movies
   const { data: relatedMovies } = useQuery<Movie[]>({
-    queryKey: [`/api/movies/popular`], // This will be replaced with actual related movies endpoint
+    queryKey: [`/api/movies/popular`],
   });
 
   useEffect(() => {
     document.title = `Watch ${movie.title}`;
-
-    let timeout: NodeJS.Timeout;
-    const handleMouseMove = () => {
-      setIsHudVisible(true);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => setIsHudVisible(false), 3000);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(timeout);
-    };
   }, [movie]);
 
   const posterUrl = movie.posterPath 
@@ -47,9 +30,7 @@ export function Player({ movie }: PlayerProps) {
       {/* Navigation */}
       <button
         onClick={() => setLocation(`/movie/${movie.id}`)}
-        className={`fixed top-4 left-4 z-50 p-2 rounded-full bg-[#1a1a2e]/50 hover:bg-indigo-600 transition-all duration-300 transform hover:scale-110 ${
-          !isHudVisible && 'opacity-0'
-        }`}
+        className="fixed top-4 left-4 z-50 p-2 rounded-full bg-[#1a1a2e]/50 hover:bg-indigo-600 transition-all duration-300 transform hover:scale-110"
       >
         <ArrowLeft className="h-6 w-6" />
       </button>
@@ -87,43 +68,6 @@ export function Player({ movie }: PlayerProps) {
             allowFullScreen
             allow="autoplay; fullscreen"
           />
-
-          {/* Bottom HUD */}
-          <div
-            className={`absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0a0a14] via-[#0a0a14]/90 to-transparent transition-opacity duration-300 ${
-              !isHudVisible && 'opacity-0'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMuted(!isMuted)}
-                className="text-white hover:bg-indigo-600/30 transition-colors duration-300"
-              >
-                {isMuted ? (
-                  <VolumeX className="transform hover:scale-110 transition-transform duration-300" />
-                ) : (
-                  <Volume2 className="transform hover:scale-110 transition-transform duration-300" />
-                )}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsLiked(!isLiked)}
-                className={`${
-                  isLiked ? 'text-indigo-400' : 'text-white'
-                } hover:bg-indigo-600/30 transition-all duration-300`}
-              >
-                <Heart 
-                  className={`transform hover:scale-110 transition-transform duration-300 ${
-                    isLiked ? 'fill-current animate-like' : ''
-                  }`}
-                />
-              </Button>
-            </div>
-          </div>
         </div>
 
         {/* Related Movies */}

@@ -69,6 +69,30 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/movies/watch/:tmdbId", async (req, res) => {
+    try {
+      const tmdbId = req.params.tmdbId;
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Movie Player</title>
+            <style>
+              body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
+              iframe { width: 100%; height: 100%; border: none; }
+            </style>
+          </head>
+          <body>
+            <iframe src="https://szvyflix-proxied.vercel.app/movies.html?tmdb=${tmdbId}" allowfullscreen></iframe>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error serving watch page:", error);
+      res.status(500).send("Failed to load movie player");
+    }
+  });
+
   app.get("/api/movies/search", async (req, res) => {
     try {
       const query = req.query.q as string;

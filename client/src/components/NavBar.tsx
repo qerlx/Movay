@@ -1,29 +1,48 @@
-import { Link, useLocation } from "wouter";
-import { SearchBox } from "./SearchBox";
+
+import { Link } from "wouter";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useLocation } from "wouter";
 
 export function NavBar() {
-  const [location] = useLocation();
+  const [search, setSearch] = useState("");
+  const [, navigate] = useLocation();
 
-  const isWatchPage = location.startsWith("/watch");
-  if (isWatchPage) return null;
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (search.trim()) {
+      navigate(`/search?q=${encodeURIComponent(search)}`);
+    }
+  };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-gradient-to-b from-background/90 to-background/0 backdrop-blur-sm">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-8">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-full items-center">
+        <div className="flex items-center gap-6 md:gap-10">
           <Link href="/">
-            <span className="text-2xl font-bold text-primary cursor-pointer">NetflixClone</span>
+            <span className="font-bold cursor-pointer">MovieFlix</span>
           </Link>
-          <div className="hidden md:flex gap-6">
+          <div className="hidden gap-6 md:flex">
             <Link href="/">
-              <span className="text-sm hover:text-primary transition-colors cursor-pointer">Home</span>
-            </Link>
-            <Link href="/movies">
-              <span className="text-sm hover:text-primary transition-colors cursor-pointer">Movies</span>
+              <span className="cursor-pointer">Home</span>
             </Link>
           </div>
         </div>
-        <SearchBox />
+        <div className="ml-auto flex items-center gap-4">
+          <form onSubmit={handleSearch} className="relative">
+            <Input
+              type="search"
+              placeholder="Search movies..."
+              className="md:w-[200px] lg:w-[300px]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Button type="submit" size="sm" className="absolute right-0 top-0">
+              Search
+            </Button>
+          </form>
+        </div>
       </div>
     </nav>
   );

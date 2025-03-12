@@ -55,23 +55,28 @@ export async function registerRoutes(app: Express) {
   app.get("/api/movies/watch/:tmdbId", async (req, res) => {
     try {
       const tmdbId = req.params.tmdbId;
+      
+      // Set appropriate content type
+      res.setHeader('Content-Type', 'text/html');
+      
       res.send(`
         <!DOCTYPE html>
         <html>
           <head>
             <title>Movie Player</title>
             <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
-              iframe { width: 100%; height: 100%; border: none; }
+              body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+              .player-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+              .player-fallback { color: white; text-align: center; }
             </style>
           </head>
           <body>
-            <iframe 
-              src="https://moviesapi.club/movie/${tmdbId}" 
-              allow="autoplay; fullscreen" 
-              allowfullscreen
-              referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
+            <div class="player-container">
+              <div class="player-fallback">
+                <h2>Movie ID: ${tmdbId}</h2>
+                <p>This is a demo player. In a real application, this would play the actual movie.</p>
+              </div>
+            </div>
           </body>
         </html>
       `);

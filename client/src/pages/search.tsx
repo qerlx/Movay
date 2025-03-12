@@ -1,21 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
-import { type TMDBMovie } from "@shared/schema";
-import { MovieGrid } from "@/components/MovieGrid";
+import { type Movie, type TVShow } from "@shared/schema";
+import { MediaGrid } from "@/components/MediaGrid";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface SearchResults {
+  movies: Movie[];
+  tvShows: TVShow[];
+}
 
 export default function SearchPage() {
   const [location] = useLocation();
   const query = new URLSearchParams(location.split("?")[1]).get("q") || "";
 
-  const { data: movies, isLoading } = useQuery<TMDBMovie[]>({
-    queryKey: [`/api/movies/search?q=${query}`],
+  const { data: results, isLoading } = useQuery<SearchResults>({
+    queryKey: [`/api/search?q=${query}`],
     enabled: query.length > 0,
   });
 
   useEffect(() => {
-    document.title = `Search: ${query} - NetflixClone`;
+    document.title = `Search: ${query} - MovieStreamHub`;
   }, [query]);
 
   if (!query) {
@@ -38,7 +43,7 @@ export default function SearchPage() {
     );
   }
 
-  if (!movies?.length) {
+  if (!results?.movies.length && !results?.tvShows.length) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <p className="text-muted-foreground">No results found for "{query}"</p>
@@ -47,9 +52,24 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <h1 className="text-2xl font-semibold mb-8">Search results for "{query}"</h1>
-      <MovieGrid movies={movies} />
+    <div className="container mx-auto px-4 py-16 space-y-12">
+      <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+        Search results for "{query}"
+      </h1>
+
+      {results.movies.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-6">Movies</h2>
+          <MediaGrid items={results.movies} type="movie" />
+        </div>
+      )}
+
+      {results.tvShows.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-6">TV Shows</h2>
+          <MediaGrid items={results.tvShows} type="tv" />
+        </div>
+      )}
     </div>
   );
 }

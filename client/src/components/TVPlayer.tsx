@@ -3,7 +3,15 @@ import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Select } from "./ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 
 interface TVPlayerProps {
@@ -66,25 +74,37 @@ export function TVPlayer({ show }: TVPlayerProps) {
               <Select
                 value={selectedSeason.toString()}
                 onValueChange={(value) => setSelectedSeason(parseInt(value))}
-                className="w-40 bg-[#1a1a2e] border-indigo-600/30"
               >
-                {Array.from({ length: show.numberOfSeasons || 0 }).map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    Season {i + 1}
-                  </option>
-                ))}
+                <SelectTrigger className="w-40 bg-[#1a1a2e] border-indigo-600/30">
+                  <SelectValue placeholder="Select Season" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {Array.from({ length: show.numberOfSeasons || 0 }).map((_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        Season {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
               </Select>
 
               <Select
                 value={selectedEpisode.toString()}
                 onValueChange={(value) => setSelectedEpisode(parseInt(value))}
-                className="w-40 bg-[#1a1a2e] border-indigo-600/30"
               >
-                {Array.from({ length: seasonData?.episodes?.length || 0 }).map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    Episode {i + 1}
-                  </option>
-                ))}
+                <SelectTrigger className="w-40 bg-[#1a1a2e] border-indigo-600/30">
+                  <SelectValue placeholder="Select Episode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {Array.from({ length: seasonData?.episodes?.length || 0 }).map((_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        Episode {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
               </Select>
             </div>
           </div>

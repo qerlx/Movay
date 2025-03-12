@@ -23,15 +23,12 @@ export async function registerRoutes(app: Express) {
         url += `&with_genres=${genre}`;
       }
 
-      const response = await fetch(
-        url,
-        {
-          headers: {
-            'Authorization': TMDB_AUTH_HEADER,
-            'accept': 'application/json'
-          }
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': TMDB_AUTH_HEADER,
+          'accept': 'application/json'
         }
-      );
+      });
 
       if (!response.ok) {
         throw new Error(`TMDB API error: ${response.statusText}`);
@@ -51,15 +48,6 @@ export async function registerRoutes(app: Express) {
           voteAverage: Math.round(movie.vote_average),
           genres: movie.genre_ids,
         }));
-
-      // Store movies in our storage
-      for (const movie of movies) {
-        const existing = await storage.getMovieByTMDBId(movie.tmdbId);
-        if (!existing) {
-          const movieData = insertMovieSchema.parse(movie);
-          await storage.createMovie(movieData);
-        }
-      }
 
       res.json({
         results: movies,
@@ -127,15 +115,12 @@ export async function registerRoutes(app: Express) {
         url += `&with_genres=${genre}`;
       }
 
-      const response = await fetch(
-        url,
-        {
-          headers: {
-            'Authorization': TMDB_AUTH_HEADER,
-            'accept': 'application/json'
-          }
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': TMDB_AUTH_HEADER,
+          'accept': 'application/json'
         }
-      );
+      });
 
       if (!response.ok) {
         throw new Error(`TMDB API error: ${response.statusText}`);
@@ -156,15 +141,6 @@ export async function registerRoutes(app: Express) {
           genres: show.genre_ids,
           numberOfSeasons: show.number_of_seasons || 1,
         }));
-
-      // Store TV shows in our storage
-      for (const show of tvShows) {
-        const existing = await storage.getTVShowByTMDBId(show.tmdbId);
-        if (!existing) {
-          const showData = insertTVShowSchema.parse(show);
-          await storage.createTVShow(showData);
-        }
-      }
 
       res.json({
         results: tvShows,
@@ -247,7 +223,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Search endpoints
+  // Search endpoint
   app.get("/api/search", async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -300,23 +276,6 @@ export async function registerRoutes(app: Express) {
           numberOfSeasons: show.number_of_seasons || 1,
         }));
 
-      // Store results in our storage
-      for (const movie of movies) {
-        const existing = await storage.getMovieByTMDBId(movie.tmdbId);
-        if (!existing) {
-          const movieData = insertMovieSchema.parse(movie);
-          await storage.createMovie(movieData);
-        }
-      }
-
-      for (const show of tvShows) {
-        const existing = await storage.getTVShowByTMDBId(show.tmdbId);
-        if (!existing) {
-          const showData = insertTVShowSchema.parse(show);
-          await storage.createTVShow(showData);
-        }
-      }
-
       res.json({
         movies,
         tvShows,
@@ -359,65 +318,6 @@ export async function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error serving watch page:", error);
       res.status(500).send("Failed to load movie player");
-    }
-  });
-    app.get("/api/movies/search", async (req, res) => {
-    try {
-      const query = req.query.q as string;
-      if (!query) {
-        return res.status(400).json({ message: "Search query required" });
-      }
-
-      const response = await fetch(
-        `${TMDB_BASE_URL}/search/multi?query=${encodeURIComponent(query)}`,
-        {
-          headers: {
-            'Authorization': TMDB_AUTH_HEADER,
-            'accept': 'application/json'
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`TMDB API error: ${response.statusText}`);
-      }
-
-      const data = await response.json() as TMDBResponse;
-
-      // Separate movies and TV shows
-      const movies = data.results
-        .filter(isTMDBMovie)
-        .map(movie => ({
-          id: movie.id,
-          tmdbId: movie.id,
-          title: movie.title,
-          overview: movie.overview,
-          posterPath: movie.poster_path,
-          backdropPath: movie.backdrop_path,
-          releaseDate: movie.release_date,
-          voteAverage: Math.round(movie.vote_average),
-          genres: movie.genre_ids,
-        }));
-
-      const tvShows = data.results
-        .filter((item): item is TMDBTVShow => !isTMDBMovie(item))
-        .map(show => ({
-          id: show.id,
-          tmdbId: show.id,
-          title: show.name,
-          overview: show.overview,
-          posterPath: show.poster_path,
-          backdropPath: show.backdrop_path,
-          firstAirDate: show.first_air_date,
-          voteAverage: Math.round(show.vote_average),
-          genres: show.genre_ids,
-          numberOfSeasons: show.number_of_seasons,
-        }));
-
-      res.json({ movies, tvShows });
-    } catch (error) {
-      console.error("Error searching:", error);
-      res.status(500).json({ message: "Failed to search" });
     }
   });
 

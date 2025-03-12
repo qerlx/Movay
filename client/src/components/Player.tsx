@@ -3,6 +3,8 @@ import { ArrowLeft, Heart, Volume2, VolumeX } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { MediaGrid } from "./MediaGrid";
 
 interface PlayerProps {
   movie: Movie;
@@ -13,6 +15,11 @@ export function Player({ movie }: PlayerProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isHudVisible, setIsHudVisible] = useState(true);
+
+  // Fetch related movies
+  const { data: relatedMovies } = useQuery<Movie[]>({
+    queryKey: [`/api/movies/popular`], // This will be replaced with actual related movies endpoint
+  });
 
   useEffect(() => {
     document.title = `Watch ${movie.title}`;
@@ -118,6 +125,16 @@ export function Player({ movie }: PlayerProps) {
             </div>
           </div>
         </div>
+
+        {/* Related Movies */}
+        {relatedMovies && relatedMovies.length > 0 && (
+          <div className="mt-12 animate-fade-in">
+            <h2 className="text-2xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
+              More Like This
+            </h2>
+            <MediaGrid items={relatedMovies.slice(0, 6)} type="movie" />
+          </div>
+        )}
       </div>
     </div>
   );

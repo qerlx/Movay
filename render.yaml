@@ -2,7 +2,7 @@ services:
   - type: web
     name: moviestreamhub
     env: node
-    buildCommand: ./build.sh
+    buildCommand: chmod +x build.sh && ./build.sh
     startCommand: node dist/server/index.js
     envVars:
       - key: NODE_ENV

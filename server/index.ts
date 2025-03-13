@@ -53,10 +53,11 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use the PORT environment variable provided by Render
-  const port = parseInt(process.env.PORT || "10000", 10);
+  // Log environment information
+  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
 
-  // Log the port we're attempting to bind to
+  // Use port 5000 as default
+  const port = parseInt(process.env.PORT || "5000", 10);
   console.log(`Attempting to bind to port ${port}`);
 
   server.listen(port, "0.0.0.0", () => {
